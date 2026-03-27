@@ -994,3 +994,155 @@ input[type="range"]::-moz-range-thumb {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   pointer-events: none; z-index: 9999;
 }
+
+/* ─── Mobile & Tablet Responsive ─────────────────────────────────────────── */
+
+/* Prevent iOS Safari from zooming on input focus (requires font-size >= 16px) */
+@media (max-width: 768px) {
+  .input, .select, textarea {
+    font-size: 16px;
+  }
+}
+
+/* ── Tablets (≤ 768px) ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .page { padding-top: 56px; }
+
+  /* Header: tighten spacing */
+  .header-inner { gap: 8px; }
+  .logo-text { font-size: 1.05rem; }
+
+  /* Hero */
+  .hero { padding: 2.5rem 1rem 2rem; }
+  .hero p { font-size: 0.9rem; }
+
+  /* Stack hero buttons vertically on narrow tablets */
+  .hero-btns { gap: 8px; }
+
+  /* Leaderboard: hide less important columns */
+  .lb-table .hide-tablet { display: none; }
+
+  /* Waiting room layout already 1-col at 700px — ensure padding is comfortable */
+  .room-layout { padding: 1rem; }
+  .room-info-card { padding: 1rem; }
+
+  /* Game layout */
+  .game-layout { padding: 1rem; }
+  .question-card { padding: 1rem; }
+
+  /* Results */
+  .results-wrap { padding: 1rem 1rem 2rem; }
+
+  /* Profile */
+  .profile-header-card { padding: 1rem; }
+}
+
+/* ── Small phones (≤ 480px) ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* Header: hide username text to save space */
+  .user-name { display: none; }
+  .dropdown-arrow { display: none; }
+  .user-btn { padding: 4px; }
+
+  /* Hero: stack buttons full-width */
+  .hero { padding: 2rem 1rem 1.5rem; }
+  .hero-btns { flex-direction: column; align-items: stretch; }
+  .hero-btns .btn-lg { width: 100%; justify-content: center; }
+
+  /* Modals: bottom sheet style */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 90vh;
+    animation: modal-slide-up .28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .modal-lg { max-width: 100%; }
+
+  /* Create room: diff grid 2 cols instead of 4 */
+  .diff-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Create room: 2-col player/question grid already inline — ensure it fits */
+  .modal-body { padding: 0.85rem 1rem 1rem; }
+
+  /* Invite URL: stack copy button below */
+  .invite-row { flex-direction: column; align-items: stretch; gap: 6px; }
+  .invite-url { text-align: center; font-size: 0.68rem; }
+  #copy-invite-btn { width: 100%; justify-content: center; }
+
+  /* Room title */
+  .room-title { font-size: 1.25rem; }
+
+  /* Settings grid already 2-col at 500px */
+
+  /* Winner screen */
+  .winner-title  { font-size: 1.5rem; }
+  .winner-trophy { font-size: 2.2rem; }
+  .winner-sub    { font-size: 0.82rem; }
+
+  /* Results actions: stack vertically */
+  .results-actions { flex-direction: column; }
+
+  /* Profile avatar */
+  .profile-big-avatar { width: 54px; height: 54px; }
+  .profile-username   { font-size: 1.2rem; }
+
+  /* Leaderboard: hide more columns on phones */
+  .lb-table .hide-mobile { display: none; }
+
+  /* Admin: make question form easier to use */
+  .option-row { flex-wrap: wrap; }
+
+  /* Reduce empty state padding */
+  .empty-state { padding: 2rem 1rem; }
+}
+
+/* ── Very small phones (≤ 360px) ─────────────────────────────────────────── */
+@media (max-width: 360px) {
+  .hero h1 { font-size: 1.8rem; }
+  .logo-text { font-size: 0.95rem; }
+  .stat-pill { padding: 3px 7px; font-size: 0.65rem; }
+}
+
+/* ── Toast: bottom-center on mobile ─────────────────────────────────────── */
+@media (max-width: 600px) {
+  #toast-container {
+    top: auto;
+    bottom: 16px;
+    right: 12px;
+    left: 12px;
+    align-items: stretch;
+  }
+  .toast {
+    min-width: unset;
+    max-width: unset;
+    justify-content: center;
+  }
+}
+
+/* ── Touch devices: larger tap targets, always-visible controls ──────────── */
+@media (hover: none) and (pointer: coarse) {
+  /* Minimum 44px tap target for key buttons */
+  .header-btn  { width: 40px; height: 40px; }
+  .answer-btn  { min-height: 52px; padding: 14px 16px; }
+  .btn-lg      { padding: 14px 28px; }
+  .tab-btn     { padding: 10px 16px; }
+  .sort-pill   { padding: 7px 14px; }
+  .room-join-btn { padding: 8px 6px; }
+
+  /* Always show kick button (no hover on touch) */
+  .kick-btn { opacity: 1; }
+
+  /* Slightly larger range thumb for easier dragging */
+  input[type="range"]::-webkit-slider-thumb {
+    width: 22px; height: 22px;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 22px; height: 22px;
+  }
+}
+
+/* ── Modal bottom-sheet animation ───────────────────────────────────────── */
+@keyframes modal-slide-up {
+  from { transform: translateY(100%); opacity: 0.6; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
