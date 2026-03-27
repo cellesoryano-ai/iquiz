@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IQuiz — Game Room</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ─── HEADER ──────────────────────────────────────────────────────────── -->
+<header id="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">🎯</div>
+      <span class="logo-text">I<span>Quiz</span></span>
+    </a>
+    <div class="header-stats">
+      <div class="stat-pill"><div class="dot" id="stat-dot"></div><strong id="stat-online">0</strong> online</div>
+      <div class="stat-pill">🎮 <strong id="stat-playing">0</strong> playing</div>
+      <div class="stat-pill">⏳ <strong id="stat-waiting">0</strong> waiting</div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn" id="mute-btn" title="Toggle sound">🔊</button>
+      <div id="header-user-area"></div>
+    </div>
+  </div>
+</header>
+
+<!-- ─── SCREENS ─────────────────────────────────────────────────────────── -->
+<main class="page">
+
+  <!-- ╔══════════════════════════════╗ -->
+  <!-- ║   SCREEN: WAITING ROOM       ║ -->
+  <!-- ╚══════════════════════════════╝ -->
+  <div class="screen active" id="screen-waiting">
+    <div class="room-layout">
+
+      <!-- Left: Room info -->
+      <div>
+        <div class="card room-info-card mb-2">
+          <div class="room-meta">
+            <div>
+              <div class="room-title">Room <span class="code" id="w-room-code">——</span></div>
+              <div class="room-subtitle" id="w-room-sub">Waiting for players…</div>
+            </div>
+            <span class="badge" id="w-visibility-badge">Public</span>
+          </div>
+
+          <div class="settings-grid" id="w-settings-grid">
+            <div class="setting-item"><div class="setting-val" id="w-s-questions">10</div><div class="setting-key">Questions</div></div>
+            <div class="setting-item"><div class="setting-val" id="w-s-timer">10s</div><div class="setting-key">Timer</div></div>
+            <div class="setting-item"><div class="setting-val" id="w-s-diff">Mixed</div><div class="setting-key">Difficulty</div></div>
+            <div class="setting-item"><div class="setting-val" id="w-s-type">FFA</div><div class="setting-key">Mode</div></div>
+          </div>
+
+          <div class="invite-row">
+            <div class="invite-url" id="w-invite-url">—</div>
+            <button class="btn btn-secondary btn-sm" id="copy-invite-btn">📋 Copy</button>
+          </div>
+
+          <!-- Host controls -->
+          <div class="host-controls" id="host-controls" style="display:none">
+            <h3>⚙️ Host Controls</h3>
+            <button class="btn btn-primary btn-full" id="start-game-btn">
+              <span class="btn-spinner"></span>
+              <span class="btn-label">▶ Start Game</span>
+            </button>
+            <div class="form-hint" style="text-align:center;margin-top:6px">Minimum 1 player required</div>
+          </div>
+
+          <!-- Guest waiting message -->
+          <div class="waiting-msg" id="guest-waiting-msg" style="display:none">
+            <span style="color:var(--primary);animation:pulse-dot 1.5s infinite;display:inline-block">●</span>
+            Waiting for the host to start…
+          </div>
+        </div>
+
+        <button class="btn btn-danger btn-full" id="leave-room-btn">🚪 Leave Room</button>
+      </div>
+
+      <!-- Right: Players list -->
+      <div class="card players-card">
+        <div class="players-title">👥 Players (<span id="player-count">0</span>)</div>
+        <div class="players-list" id="players-list"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ╔══════════════════════════════╗ -->
+  <!-- ║   SCREEN: GAME PLAY          ║ -->
+  <!-- ╚══════════════════════════════╝ -->
+  <div class="screen" id="screen-game">
+    <div class="game-layout">
+
+      <!-- Left: Question + answers -->
+      <div>
+        <div class="game-topbar">
+          <div class="question-progress">
+            Question <strong id="q-current">1</strong> / <strong id="q-total">10</strong>
+          </div>
+          <div class="question-meta">
+            <span class="badge badge-gray" id="q-category" style="font-size:.7rem"></span>
+            <span class="badge badge-gray" id="q-difficulty" style="font-size:.7rem"></span>
+            <button class="header-btn" id="leave-game-btn" title="Leave game" style="color:var(--red)">🚪</button>
+          </div>
+        </div>
+
+        <div class="timer-wrap">
+          <div class="timer-track">
+            <div class="timer-bar" id="timer-bar" style="width:100%"></div>
+          </div>
+        </div>
+
+        <div class="answer-count-row" id="answer-count-row"></div>
+
+        <div class="card question-card mb-2">
+          <div class="question-text" id="question-text">Loading…</div>
+        </div>
+
+        <div class="answers-grid" id="answers-grid">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="answer-feedback" id="answer-feedback"></div>
+
+        <!-- Round result panel -->
+        <div class="card round-result-panel" id="round-result-panel">
+          <div class="round-result-header">
+            <span style="font-size:.85rem;font-weight:700;color:var(--text)">🏆 Round Results</span>
+            <span class="text-xs text-muted" id="rr-next-label">Next question soon…</span>
+          </div>
+          <div class="round-result-list" id="round-result-list"></div>
+        </div>
+      </div>
+
+      <!-- Right: Live scores -->
+      <div class="card live-scores-card">
+        <div class="live-scores-title">📊 Live Scores</div>
+        <div class="ls-list" id="ls-list"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ╔══════════════════════════════╗ -->
+  <!-- ║   SCREEN: RESULTS            ║ -->
+  <!-- ╚══════════════════════════════╝ -->
+  <div class="screen" id="screen-results">
+    <div class="results-wrap">
+
+      <div class="winner-banner" id="winner-banner">
+        <span class="winner-trophy">🏆</span>
+        <div class="winner-title" id="winner-title">Game Over!</div>
+        <div class="winner-sub" id="winner-sub"></div>
+        <div class="winner-duration" id="winner-duration"></div>
+      </div>
+
+      <!-- My stats -->
+      <div class="my-stats-grid" id="my-stats-grid" style="display:none">
+        <div class="my-stat card"><div class="my-stat-val text-primary" id="my-score">0</div><div class="my-stat-key">Points</div></div>
+        <div class="my-stat card"><div class="my-stat-val" style="color:#4ade80" id="my-correct">0</div><div class="my-stat-key">Correct</div></div>
+        <div class="my-stat card"><div class="my-stat-val" id="my-rank">#?</div><div class="my-stat-key">Rank</div></div>
+      </div>
+
+      <!-- Accuracy bar (my stat) -->
+      <div class="card accuracy-bar-wrap" id="my-accuracy-wrap" style="display:none">
+        <div class="accuracy-label"><span>Your Accuracy</span><span id="my-accuracy-pct">0%</span></div>
+        <div class="accuracy-track"><div class="accuracy-fill" id="my-accuracy-fill" style="width:0%"></div></div>
+      </div>
+
+      <!-- Full results -->
+      <div class="card results-list-card">
+        <h3 style="margin-bottom:.75rem;font-size:.9rem;color:var(--text-2)">🏁 Final Results</h3>
+        <div class="results-list" id="results-list"></div>
+      </div>
+
+      <div class="results-actions">
+        <button class="btn btn-secondary" style="flex:1" id="go-home-btn">🏠 Home</button>
+        <button class="btn btn-primary" style="flex:1" id="play-again-btn">🔄 Play Again</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast-container"></div>
+
+<!-- ─── SCRIPTS ─────────────────────────────────────────────────────────── -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/socket.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   ROOM PAGE LOGIC
+════════════════════════════════════════════════════════════════ */
+window.initPage = function() {
+
+  const LETTERS = ['A', 'B', 'C', 'D'];
+  const params  = new URLSearchParams(window.location.search);
+  const CODE    = params.get('code')?.toUpperCase();
+
+  // ── Redirect if not logged in ──────────────────────────────────────
+  function guardAuth() {
+    if (!Store.get('user') || !Store.get('token')) {
+      UI.toast('Please sign in first', 'error');
+      window.location.href = 'index.html';
+      return false;
+    }
+    return true;
+  }
+
+  // ── Switch visible screen ──────────────────────────────────────────
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById(id);
+    if (el) el.classList.add('active');
+  }
+
+  // ── Join room on page load ──────────────────────────────────────────
+  function init() {
+    if (!guardAuth()) return;
+    if (!CODE) { UI.toast('No room code', 'error'); window.location.href = 'index.html'; return; }
+
+    const existing = Store.get('room');
+    if (!existing || existing.code !== CODE) {
+      // Wait for socket connection then join
+      function tryJoin() {
+        if (!Store.get('isConnected')) {
+          setTimeout(tryJoin, 400);
+          return;
+        }
+        SocketClient.joinRoom(CODE, (result) => {
+          if (!result.success) {
+            UI.toast(result.error || 'Could not join room', 'error');
+            setTimeout(() => window.location.href = 'index.html', 1500);
+          }
+        });
+      }
+      tryJoin();
+    } else {
+      renderWaiting(existing);
+    }
+  }
+
+  // ── Listen to store changes ─────────────────────────────────────────
+  Store.on('change:room',            onRoomChange);
+  Store.on('change:currentQuestion', onQuestionChange);
+  Store.on('change:roundResult',     onRoundResult);
+  Store.on('change:answerFeedback',  onAnswerFeedback);
+  Store.on('change:answerCount',     onAnswerCount);
+  Store.on('change:gameEnd',         onGameEnd);
+
+  function onRoomChange(room) {
+    if (!room) return;
+    if (room.status === 'waiting' || room.status === 'starting') {
+      renderWaiting(room);
+      showScreen('screen-waiting');
+    } else if (['question','playing','results'].includes(room.status)) {
+      showScreen('screen-game');
+      renderLiveScores(room.players);
+    }
+  }
+
+  // ══════════════════════════════════════════
+  //  WAITING ROOM
+  // ══════════════════════════════════════════
+  function renderWaiting(room) {
+    const user = Store.get('user');
+    const me   = room.players.find(p => p.userId === user?.id);
+    const isHost = me?.isHost || false;
+    const connected = room.players.filter(p => p.isConnected);
+
+    document.getElementById('w-room-code').textContent = room.code;
+    document.getElementById('w-room-sub').textContent  = `${connected.length}/${room.settings.maxPlayers} players · ${room.settings.gameType === 'ffa' ? 'Free For All' : 'Versus'}`;
+
+    const vBadge = document.getElementById('w-visibility-badge');
+    vBadge.textContent = room.settings.isPublic ? '🌐 Public' : '🔒 Private';
+    vBadge.className   = `badge ${room.settings.isPublic ? 'badge-green' : 'badge-gray'}`;
+
+    document.getElementById('w-s-questions').textContent = room.settings.questionCount;
+    document.getElementById('w-s-timer').textContent     = room.settings.timerSeconds + 's';
+    document.getElementById('w-s-diff').textContent      = room.settings.difficulty;
+    document.getElementById('w-s-type').textContent      = room.settings.gameType === 'ffa' ? 'FFA' : 'VS';
+
+    const url = window.location.origin + '/room.html?code=' + room.code;
+    document.getElementById('w-invite-url').textContent = url;
+
+    document.getElementById('host-controls').style.display        = isHost  ? 'block' : 'none';
+    document.getElementById('guest-waiting-msg').style.display    = !isHost ? 'flex'  : 'none';
+    document.getElementById('player-count').textContent           = connected.length;
+
+    renderPlayers(room.players, isHost, user);
+  }
+
+  function renderPlayers(players, isHost, user) {
+    const list = document.getElementById('players-list');
+    list.innerHTML = '';
+    players.forEach(p => {
+      const isMe = p.userId === user?.id;
+      const div  = document.createElement('div');
+      div.className = `player-item${isMe ? ' me' : ''}${!p.isConnected ? ' disconnected' : ''}`;
+      div.innerHTML = `
+        <img class="player-avatar" src="${UI.avatar({ avatar: p.avatar, username: p.username })}" alt="${p.username}" />
+        <div class="player-name-wrap">
+          <div class="player-name">
+            ${p.isHost ? '<span class="crown-icon">👑</span> ' : ''}
+            ${p.username}
+            ${isMe ? '<span style="font-size:.68rem;color:var(--primary)"> (you)</span>' : ''}
+          </div>
+          ${!p.isConnected ? '<div class="player-tag" style="color:var(--red)">disconnected</div>' : ''}
+        </div>
+        ${isHost && !isMe && p.isConnected ? `<button class="kick-btn" data-uid="${p.userId}">Kick</button>` : ''}`;
+      list.appendChild(div);
+    });
+
+    if (isHost) {
+      list.querySelectorAll('.kick-btn').forEach(btn => {
+        btn.addEventListener('click', () => SocketClient.kickPlayer(btn.dataset.uid));
+      });
+    }
+  }
+
+  // Copy invite link
+  document.getElementById('copy-invite-btn').addEventListener('click', () => {
+    const url = document.getElementById('w-invite-url').textContent;
+    navigator.clipboard.writeText(url).then(() => {
+      UI.toast('Invite link copied!', 'success');
+      document.getElementById('copy-invite-btn').textContent = '✓ Copied';
+      setTimeout(() => { document.getElementById('copy-invite-btn').textContent = '📋 Copy'; }, 2000);
+    }).catch(() => UI.toast('Copy failed', 'error'));
+  });
+
+  // Start game
+  document.getElementById('start-game-btn').addEventListener('click', () => {
+    const btn = document.getElementById('start-game-btn');
+    UI.setLoading(btn, true);
+    SocketClient.startGame((result) => {
+      UI.setLoading(btn, false);
+      if (!result?.success) UI.toast(result?.error || 'Failed to start', 'error');
+    });
+  });
+
+  // Leave room
+  document.getElementById('leave-room-btn').addEventListener('click', () => {
+    SocketClient.leaveRoom();
+    window.location.href = 'index.html';
+  });
+
+  // ══════════════════════════════════════════
+  //  GAME PLAY
+  // ══════════════════════════════════════════
+  let _timerInterval = null;
+
+  function onQuestionChange(q) {
+    if (!q) return;
+    showScreen('screen-game');
+    renderQuestion(q);
+  }
+
+  function renderQuestion(q) {
+    // Progress
+    const idx = q.index !== undefined ? q.index + 1 : '?';
+    const tot = q.total || Store.get('room')?.settings?.questionCount || '?';
+    document.getElementById('q-current').textContent  = idx;
+    document.getElementById('q-total').textContent    = tot;
+    document.getElementById('q-category').textContent = q.category || '';
+    document.getElementById('q-difficulty').textContent = q.difficulty || '';
+    document.getElementById('q-difficulty').style.color = UI.diffColor(q.difficulty);
+
+    // Question text
+    document.getElementById('question-text').textContent = q.question;
+
+    // Answers
+    const grid = document.getElementById('answers-grid');
+    grid.innerHTML = '';
+    (q.options || []).forEach((opt, i) => {
+      const btn = document.createElement('button');
+      btn.className   = 'answer-btn';
+      btn.dataset.idx = i;
+      btn.innerHTML = `
+        <span class="answer-letter">${LETTERS[i]}</span>
+        <span class="answer-text">${opt}</span>`;
+      btn.addEventListener('click', () => handleAnswer(i));
+      grid.appendChild(btn);
+    });
+
+    // Reset UI
+    document.getElementById('answer-feedback').className = 'answer-feedback';
+    document.getElementById('round-result-panel').classList.remove('visible');
+    document.getElementById('answer-count-row').textContent = '';
+
+    // Timer
+    startTimer(q.endsAt, (Store.get('room')?.settings?.timerSeconds || 10) * 1000);
+  }
+
+  function startTimer(endsAt, totalMs) {
+    clearInterval(_timerInterval);
+    const bar = document.getElementById('timer-bar');
+    function tick() {
+      const pct = Math.max(0, ((endsAt - Date.now()) / totalMs) * 100);
+      bar.style.width    = pct + '%';
+      bar.className      = 'timer-bar' + (pct < 25 ? ' danger' : pct < 50 ? ' warn' : '');
+      if (pct <= 0) clearInterval(_timerInterval);
+    }
+    _timerInterval = setInterval(tick, 50);
+    tick();
+  }
+
+  function handleAnswer(idx) {
+    if (Store.get('selectedAnswer') !== null) return;
+    if (Store.get('roundResult')) return;
+    Store.set('selectedAnswer', idx);
+
+    // Visual feedback immediately
+    document.querySelectorAll('.answer-btn').forEach(btn => {
+      btn.disabled = true;
+      if (parseInt(btn.dataset.idx) === idx) btn.classList.add('selected');
+    });
+
+    SocketClient.submitAnswer(idx, (r) => {
+      if (!r?.success) UI.toast(r?.error || 'Failed to submit', 'error');
+    });
+  }
+
+  function onAnswerFeedback(feedback) {
+    if (!feedback) return;
+    const el  = document.getElementById('answer-feedback');
+    el.className = 'answer-feedback ' + (feedback.isCorrect ? 'correct' : 'wrong');
+    el.textContent = feedback.isCorrect
+      ? `✓ Correct! Score: ${feedback.score.toLocaleString()}`
+      : `✕ Wrong!`;
+  }
+
+  function onAnswerCount(count) {
+    if (!count) return;
+    const el = document.getElementById('answer-count-row');
+    if (Store.get('roundResult')) { el.textContent = ''; return; }
+    el.textContent = `${count.answered}/${count.total} answered`;
+  }
+
+  function onRoundResult(result) {
+    if (!result) return;
+    clearInterval(_timerInterval);
+
+    // Reveal correct/wrong answers
+    const correctIdx = result.correctIndex;
+    const selected   = Store.get('selectedAnswer');
+    document.querySelectorAll('.answer-btn').forEach(btn => {
+      const i = parseInt(btn.dataset.idx);
+      btn.disabled = true;
+      if (i === correctIdx) {
+        btn.classList.remove('selected', 'dimmed');
+        btn.classList.add('correct');
+        btn.querySelector('.answer-letter').textContent = '✓';
+      } else if (i === selected && i !== correctIdx) {
+        btn.classList.remove('selected', 'dimmed');
+        btn.classList.add('wrong');
+        btn.querySelector('.answer-letter').textContent = '✕';
+      } else {
+        btn.classList.add('dimmed');
+      }
+    });
+
+    // Timer bar to 0
+    document.getElementById('timer-bar').style.width = '0%';
+    document.getElementById('answer-count-row').textContent = '';
+
+    // Show round results
+    const panel  = document.getElementById('round-result-panel');
+    const list   = document.getElementById('round-result-list');
+    const nextLbl = document.getElementById('rr-next-label');
+    nextLbl.textContent = result.isLastQuestion ? '🎉 Last question!' : 'Next question soon…';
+
+    const user = Store.get('user');
+    list.innerHTML = '';
+    result.leaderboard.slice(0, 6).forEach((p, i) => {
+      const isMe = p.userId === user?.id;
+      const div  = document.createElement('div');
+      div.className = `rr-item${isMe ? ' me' : ''}`;
+      div.innerHTML = `
+        <span class="rr-rank">${UI.rankBadge(i + 1)}</span>
+        <span class="rr-name">${p.username}</span>
+        <span class="rr-correct ${p.wasCorrect ? 'yes' : 'no'}">${p.wasCorrect ? '✓' : '✕'}</span>
+        <span class="rr-score">${UI.formatNum(p.score)}</span>`;
+      list.appendChild(div);
+    });
+    panel.classList.add('visible');
+
+    // Update live scores
+    renderLiveScores(result.leaderboard.map(p => ({ ...p, hasAnswered: true })));
+  }
+
+  function renderLiveScores(players) {
+    const list = document.getElementById('ls-list');
+    const user = Store.get('user');
+    if (!list) return;
+
+    const sorted = [...players]
+      .filter(p => p.isConnected !== false)
+      .sort((a, b) => b.score - a.score);
+
+    list.innerHTML = '';
+    sorted.forEach((p, i) => {
+      const isMe = p.userId === user?.id;
+      const div  = document.createElement('div');
+      div.className = `ls-item${isMe ? ' me' : ''}`;
+      div.innerHTML = `
+        <span class="ls-rank">${i === 0 ? '👑' : i + 1}</span>
+        <img class="ls-avatar" src="${UI.avatar({ avatar: p.avatar, username: p.username })}" alt="${p.username}" />
+        <span class="ls-name">${p.username}</span>
+        ${p.hasAnswered && !Store.get('roundResult') ? '<span class="ls-answered">✓</span>' : ''}
+        <span class="ls-score">${UI.formatNum(p.score)}</span>`;
+      list.appendChild(div);
+    });
+  }
+
+  // Leave during game
+  document.getElementById('leave-game-btn').addEventListener('click', () => {
+    if (confirm('Leave the current game?')) {
+      SocketClient.leaveRoom();
+      window.location.href = 'index.html';
+    }
+  });
+
+  // ══════════════════════════════════════════
+  //  GAME RESULTS
+  // ══════════════════════════════════════════
+  function onGameEnd(data) {
+    if (!data) return;
+    clearInterval(_timerInterval);
+    showScreen('screen-results');
+
+    const user   = Store.get('user');
+    const myRes  = data.results.find(r => r.userId === user?.id);
+    const isWin  = data.results[0]?.userId === user?.id;
+
+    // Winner banner
+    document.getElementById('winner-title').textContent = isWin ? '🎉 You Won!' : 'Game Over!';
+    document.getElementById('winner-sub').textContent   = isWin
+      ? 'Congratulations!'
+      : data.winner ? `${data.winner.username} wins with ${UI.formatNum(data.winner.score)} points` : 'Nobody wins!';
+    if (data.duration) {
+      document.getElementById('winner-duration').textContent = '⏱ ' + UI.formatDuration(data.duration);
+    }
+
+    // My stats
+    if (myRes) {
+      document.getElementById('my-stats-grid').style.display   = 'grid';
+      document.getElementById('my-accuracy-wrap').style.display = 'block';
+      document.getElementById('my-score').textContent   = UI.formatNum(myRes.score);
+      document.getElementById('my-correct').textContent = myRes.correctAnswers;
+      document.getElementById('my-rank').textContent    = '#' + myRes.rank;
+
+      const total = myRes.correctAnswers + myRes.wrongAnswers;
+      const pct   = total > 0 ? Math.round((myRes.correctAnswers / total) * 100) : 0;
+      document.getElementById('my-accuracy-pct').textContent = pct + '%';
+      setTimeout(() => {
+        document.getElementById('my-accuracy-fill').style.width = pct + '%';
+        document.getElementById('my-accuracy-fill').style.background =
+          pct >= 70 ? 'var(--primary)' : pct >= 50 ? '#f59e0b' : 'var(--red)';
+      }, 100);
+    }
+
+    // Full results
+    const resList = document.getElementById('results-list');
+    resList.innerHTML = '';
+    data.results.forEach((p, i) => {
+      const isMe  = p.userId === user?.id;
+      const total = p.correctAnswers + p.wrongAnswers;
+      const acc   = total > 0 ? Math.round((p.correctAnswers / total) * 100) : 0;
+      const div   = document.createElement('div');
+      div.className = `result-item${isMe ? ' me' : ''}`;
+      div.style.animationDelay = (i * 0.07) + 's';
+      div.innerHTML = `
+        <span class="result-rank">${UI.rankBadge(p.rank)}</span>
+        <img class="result-avatar" src="${UI.avatar({ avatar: p.avatar, username: p.username })}" alt="${p.username}" />
+        <div class="result-info">
+          <div class="result-name">${p.username}${isMe ? ' <span style="color:var(--primary);font-size:.72rem">(you)</span>' : ''}</div>
+          <div class="result-stats">
+            <span style="color:#4ade80">${p.correctAnswers}✓</span>
+            <span style="color:#fca5a5"> ${p.wrongAnswers}✕</span>
+            · ${acc}% acc
+          </div>
+        </div>
+        <span class="result-score">${UI.formatNum(p.score)}</span>`;
+      resList.appendChild(div);
+    });
+
+    // Confetti for winner
+    if (isWin) setTimeout(() => UI.confetti(5000), 200);
+  }
+
+  // Buttons
+  document.getElementById('go-home-btn').addEventListener('click', () => {
+    Store.set('room', null);
+    Store.resetGame();
+    window.location.href = 'index.html';
+  });
+
+  document.getElementById('play-again-btn').addEventListener('click', () => {
+    Store.set('room', null);
+    Store.resetGame();
+    window.location.href = 'index.html';
+  });
+
+  // ── Init ───────────────────────────────────────────────────────────
+  init();
+
+  // Also process any existing game state (e.g. after reconnect)
+  const existingQuestion = Store.get('currentQuestion');
+  if (existingQuestion) onQuestionChange(existingQuestion);
+  const existingGameEnd = Store.get('gameEnd');
+  if (existingGameEnd) onGameEnd(existingGameEnd);
+};
+</script>
+<script src="js/app.js"></script>
+</body>
+</html>

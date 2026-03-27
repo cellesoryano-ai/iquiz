@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IQuiz — Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header id="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo"><div class="logo-icon">🎯</div><span class="logo-text">I<span>Quiz</span></span></a>
+    <div class="header-stats">
+      <div class="stat-pill"><div class="dot" id="stat-dot"></div><strong id="stat-online">0</strong> online</div>
+      <div class="stat-pill">🎮 <strong id="stat-playing">0</strong> playing</div>
+    </div>
+    <div class="header-actions">
+      <a href="index.html" class="header-btn">🏠</a>
+      <a href="leaderboard.html" class="header-btn">🏆</a>
+      <button class="header-btn" id="mute-btn">🔊</button>
+      <div id="header-user-area"></div>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="container-sm" style="padding:2rem 1rem 4rem" id="profile-main">
+    <div style="padding:4rem;text-align:center"><div class="spinner"></div></div>
+  </div>
+</main>
+
+<div id="toast-container"></div>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/socket.js"></script>
+<script>
+window.initPage = async function() {
+  const token = Store.get('token');
+  const user  = Store.get('user');
+  if (!user || !token) { window.location.href = 'index.html'; return; }
+
+  let profile;
+  try {
+    profile = await API.get('/api/profile/me', token);
+  } catch (err) {
+    document.getElementById('profile-main').innerHTML =
+      `<p class="text-muted" style="text-align:center;padding:3rem">${err.message}</p>`;
+    return;
+  }
+
+  const { user: pu, recentGames } = profile;
+  const winRate = pu.stats.gamesPlayed > 0 ? Math.round((pu.stats.gamesWon / pu.stats.gamesPlayed) * 100) : 0;
+  const acc     = pu.accuracy || 0;
+  const isGuest = pu.authType === 'guest';
+
+  function renderProfile(data) {
+    const { user: u } = data;
+    const wr  = u.stats.gamesPlayed > 0 ? Math.round((u.stats.gamesWon / u.stats.gamesPlayed) * 100) : 0;
+    const a   = u.accuracy || 0;
+
+    document.getElementById('profile-main').innerHTML = `
+      <!-- Profile header -->
+      <div class="card profile-header-card mb-2">
+        <div class="profile-top">
+          <img class="profile-big-avatar" id="profile-avatar" src="${UI.avatar(u)}" alt="${u.username}" />
+          <div style="flex:1;min-width:0">
+            <div class="profile-username-wrap" id="username-display">
+              <span class="profile-username">${u.username}</span>
+              ${isGuest ? `<button class="edit-name-btn" id="edit-name-btn">✏️ Edit</button>` : ''}
+              <span class="badge ${u.authType === 'discord' ? 'badge-blue' : 'badge-gray'}" style="font-size:.7rem">
+                ${u.authType === 'discord' ? '🎮 Discord' : '👤 Guest'}
+              </span>
+            </div>
+            <div class="profile-rank">Global Rank: <span>#${u.globalRank}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats grid -->
+      <div class="profile-stats-grid mb-2">
+        <div class="card profile-stat-card"><div class="ps-icon">🏆</div><div class="ps-val text-primary">${UI.formatNum(u.stats.totalScore)}</div><div class="ps-key">Total Score</div></div>
+        <div class="card profile-stat-card"><div class="ps-icon">🎮</div><div class="ps-val" style="color:#93c5fd">${u.stats.gamesPlayed}</div><div class="ps-key">Games Played</div></div>
+        <div class="card profile-stat-card"><div class="ps-icon">🎯</div><div class="ps-val text-primary">${wr}%</div><div class="ps-key">Win Rate</div></div>
+        <div class="card profile-stat-card"><div class="ps-icon">⚡</div><div class="ps-val" style="color:#fb923c">${u.stats.bestWinStreak}</div><div class="ps-key">Best Streak</div></div>
+      </div>
+
+      <!-- Accuracy bar -->
+      <div class="card accuracy-bar-wrap mb-2">
+        <div class="accuracy-label"><span>Answer Accuracy</span><span id="acc-label">${a}%</span></div>
+        <div class="accuracy-track"><div class="accuracy-fill" id="acc-fill" style="width:0%"></div></div>
+        <div class="flex justify-between text-xs text-muted mt-2">
+          <span>${u.stats.totalCorrect} correct</span>
+          <span>${u.stats.totalAnswered} total</span>
+        </div>
+      </div>
+
+      <!-- Recent games -->
+      ${recentGames.length ? `
+      <div class="card" style="padding:1rem">
+        <h3 style="font-size:.88rem;color:var(--text-2);margin-bottom:.75rem">📅 Recent Games</h3>
+        <div class="recent-games-list" id="recent-games-list"></div>
+      </div>` : ''}`;
+
+    // Animate accuracy bar
+    setTimeout(() => {
+      const fill = document.getElementById('acc-fill');
+      if (fill) {
+        fill.style.width = a + '%';
+        fill.style.background = a >= 70 ? 'var(--primary)' : a >= 50 ? '#f59e0b' : 'var(--red)';
+      }
+    }, 100);
+
+    // Recent games
+    const rgList = document.getElementById('recent-games-list');
+    if (rgList) {
+      recentGames.forEach(g => {
+        const myR = g.players?.find(p => p.userId === user?.id);
+        const div = document.createElement('div');
+        div.className = 'rg-item';
+        div.innerHTML = `
+          <span class="rg-rank">${myR ? UI.rankBadge(myR.rank) : '?'}</span>
+          <div class="rg-info">
+            <div class="rg-title">${g.gameType === 'ffa' ? 'Free For All' : 'Versus'} · ${g.players?.length || 0} players</div>
+            <div class="rg-meta">${new Date(g.playedAt).toLocaleDateString()} · ${g.totalQuestions} questions</div>
+          </div>
+          <span class="rg-score">${UI.formatNum(myR?.score || 0)}</span>`;
+        rgList.appendChild(div);
+      });
+    }
+
+    // Edit name (guests only)
+    if (isGuest) {
+      document.getElementById('edit-name-btn')?.addEventListener('click', () => {
+        const current = u.username;
+        const input   = document.createElement('input');
+        input.className = 'input';
+        input.value     = current;
+        input.maxLength = 20;
+        input.style.cssText = 'width:160px;padding:5px 10px;font-size:.9rem';
+
+        const saveBtn = document.createElement('button');
+        saveBtn.className   = 'btn btn-primary btn-sm';
+        saveBtn.textContent = 'Save';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className   = 'btn btn-secondary btn-sm';
+        cancelBtn.textContent = 'Cancel';
+
+        const wrap = document.getElementById('username-display');
+        wrap.innerHTML = '';
+        wrap.append(input, saveBtn, cancelBtn);
+        input.focus();
+
+        cancelBtn.addEventListener('click', renderProfile.bind(null, data));
+
+        saveBtn.addEventListener('click', async () => {
+          const newName = input.value.trim();
+          if (!newName || newName.length < 2) return UI.toast('Min 2 chars', 'error');
+          try {
+            await API.put('/api/profile/username', { username: newName }, token);
+            data.user.username = newName;
+            Store.set('user', { ...Store.get('user'), username: newName });
+            UI.toast('Username updated!', 'success');
+            renderProfile(data);
+          } catch (err) {
+            UI.toast(err.message, 'error');
+          }
+        });
+      });
+    }
+  }
+
+  renderProfile(profile);
+};
+</script>
+<script src="js/app.js"></script>
+</body>
+</html>

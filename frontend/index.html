@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IQuiz — Multiplayer Trivia</title>
+  <meta name="description" content="Real-time multiplayer trivia game. Play with friends or compete globally!" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ─── HEADER ──────────────────────────────────────────────────────────── -->
+<header id="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo">
+      <div class="logo-icon">🎯</div>
+      <span class="logo-text">I<span>Quiz</span></span>
+    </a>
+
+    <div class="header-stats">
+      <div class="stat-pill">
+        <div class="dot" id="stat-dot"></div>
+        <strong id="stat-online">0</strong> online
+      </div>
+      <div class="stat-pill">
+        🎮 <strong id="stat-playing">0</strong> playing
+      </div>
+      <div class="stat-pill">
+        ⏳ <strong id="stat-waiting">0</strong> waiting
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <a href="leaderboard.html" class="header-btn" title="Leaderboard">🏆</a>
+      <button class="header-btn" id="mute-btn" title="Toggle sound">🔊</button>
+      <button class="btn btn-primary btn-sm" id="header-signin-btn" style="display:none">Sign In</button>
+      <div id="header-user-area"></div>
+    </div>
+  </div>
+</header>
+
+<!-- ─── MAIN ────────────────────────────────────────────────────────────── -->
+<main class="page">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">
+      <span class="dot" style="width:7px;height:7px;border-radius:50%;background:var(--primary);animation:pulse-dot 2s infinite"></span>
+      Live Multiplayer Trivia
+    </div>
+    <h1>Play. Learn. <span class="gradient-text">Win.</span></h1>
+    <p>Challenge players worldwide in real-time trivia battles across Science, History, Sports, Technology and more.</p>
+    <div class="hero-btns">
+      <button class="btn btn-primary btn-lg" id="btn-create-room">➕ Create Room</button>
+      <button class="btn btn-secondary btn-lg" id="btn-join-code">🔑 Join with Code</button>
+    </div>
+  </section>
+
+  <!-- Features grid -->
+  <section class="container" style="padding-bottom:1.5rem">
+    <div class="features-grid">
+      <div class="feature-card"><div class="feature-icon">🌍</div><div class="feature-label">Global Players</div><div class="feature-desc">Compete worldwide</div></div>
+      <div class="feature-card"><div class="feature-icon">👥</div><div class="feature-label">Up to 20 Players</div><div class="feature-desc">Per game room</div></div>
+      <div class="feature-card"><div class="feature-icon">🧠</div><div class="feature-label">8 Categories</div><div class="feature-desc">Diverse questions</div></div>
+      <div class="feature-card"><div class="feature-icon">🔒</div><div class="feature-label">Private Rooms</div><div class="feature-desc">Play with friends</div></div>
+    </div>
+  </section>
+
+  <!-- Public Rooms -->
+  <section class="container" style="padding-bottom:3rem">
+    <div class="section-header">
+      <div class="section-title">🌐 Public Lobbies</div>
+      <div class="section-count" id="room-count">0 open</div>
+    </div>
+    <div class="rooms-grid" id="rooms-grid">
+      <div class="empty-state" id="lobby-empty">
+        <div class="empty-icon">🎮</div>
+        <div class="empty-title">No public rooms yet</div>
+        <div class="empty-desc">Connect to see live rooms</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ─── AUTH MODAL ───────────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="auth-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title">Join IQuiz</div><div class="modal-sub">Choose how to play</div></div>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs mb-3" id="auth-tabs">
+        <button class="tab-btn active" data-tab="guest">👤 Guest</button>
+        <button class="tab-btn" data-tab="discord">🎮 Discord</button>
+      </div>
+
+      <!-- Guest tab -->
+      <div id="tab-guest">
+        <form id="guest-form">
+          <div class="form-group">
+            <label class="form-label" for="guest-username">Choose a username</label>
+            <input class="input" id="guest-username" type="text" placeholder="Enter username…" minlength="2" maxlength="20" required autocomplete="off" />
+            <div class="form-hint">2–20 characters · letters, numbers, spaces</div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" id="guest-submit-btn">
+            <span class="btn-spinner"></span>
+            <span class="btn-label">👤 Play as Guest</span>
+          </button>
+        </form>
+        <p class="text-xs text-muted" style="text-align:center;margin-top:10px">Guest accounts have limited stats tracking</p>
+      </div>
+
+      <!-- Discord tab -->
+      <div id="tab-discord" class="hidden">
+        <div class="discord-benefits mb-3">
+          <div class="benefit-item"><span class="benefit-dot"></span>Persistent stats &amp; game history</div>
+          <div class="benefit-item"><span class="benefit-dot"></span>Global leaderboard ranking</div>
+          <div class="benefit-item"><span class="benefit-dot"></span>Profile with achievements</div>
+          <div class="benefit-item"><span class="benefit-dot"></span>Your Discord avatar</div>
+        </div>
+        <button class="btn btn-discord btn-full" id="discord-login-btn">
+          <svg style="width:18px;height:18px;margin-right:6px" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057.1 18.079.112 18.1.13 18.114a19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z"/>
+          </svg>
+          Continue with Discord
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CREATE ROOM MODAL ────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="create-room-modal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div><div class="modal-title">Create Room</div><div class="modal-sub">Configure your game</div></div>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Visibility -->
+      <div class="form-group">
+        <div class="form-label">Visibility</div>
+        <div class="option-grid">
+          <button class="option-btn selected" data-group="visibility" data-value="true">
+            <div class="option-btn-icon">🌐</div>
+            <div class="option-btn-label">Public</div>
+            <div class="option-btn-desc">Anyone can join</div>
+          </button>
+          <button class="option-btn" data-group="visibility" data-value="false">
+            <div class="option-btn-icon">🔒</div>
+            <div class="option-btn-label">Private</div>
+            <div class="option-btn-desc">Invite only</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Game Type -->
+      <div class="form-group">
+        <div class="form-label">Game Type</div>
+        <div class="option-grid">
+          <button class="option-btn selected" data-group="gameType" data-value="ffa">
+            <div class="option-btn-label">Free For All</div>
+            <div class="option-btn-desc">Everyone vs everyone</div>
+          </button>
+          <button class="option-btn" data-group="gameType" data-value="versus">
+            <div class="option-btn-label">Versus</div>
+            <div class="option-btn-desc">Competitive mode</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Max Players + Question Count in a row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" class="mb-2">
+        <div class="form-group" style="margin:0">
+          <label class="form-label" for="cr-max-players">Max Players</label>
+          <select class="select" id="cr-max-players">
+            <option value="2">2 players</option>
+            <option value="5">5 players</option>
+            <option value="10" selected>10 players</option>
+            <option value="15">15 players</option>
+            <option value="20">20 players</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label" for="cr-q-count">Questions</label>
+          <select class="select" id="cr-q-count">
+            <option value="5">5 questions</option>
+            <option value="10" selected>10 questions</option>
+            <option value="15">15 questions</option>
+            <option value="20">20 questions</option>
+            <option value="25">25 questions</option>
+            <option value="30">30 questions</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Timer slider -->
+      <div class="form-group">
+        <div class="slider-row">
+          <span class="form-label" style="margin:0">Time per Question</span>
+          <span class="slider-value" id="cr-timer-val">10s</span>
+        </div>
+        <input type="range" id="cr-timer" min="1" max="15" value="10" />
+        <div class="flex justify-between text-xs text-muted mt-1"><span>1s (Fast)</span><span>15s (Slow)</span></div>
+      </div>
+
+      <!-- Difficulty -->
+      <div class="form-group">
+        <div class="form-label">Difficulty</div>
+        <div class="diff-grid">
+          <button class="diff-btn" data-group="difficulty" data-value="easy">
+            <span class="diff-icon">🟢</span>Easy
+          </button>
+          <button class="diff-btn" data-group="difficulty" data-value="medium">
+            <span class="diff-icon">🟡</span>Medium
+          </button>
+          <button class="diff-btn" data-group="difficulty" data-value="hard">
+            <span class="diff-icon">🔴</span>Hard
+          </button>
+          <button class="diff-btn selected" data-group="difficulty" data-value="mixed">
+            <span class="diff-icon">🔀</span>Mixed
+          </button>
+        </div>
+      </div>
+
+      <!-- Categories -->
+      <div class="form-group">
+        <div class="form-label">Categories <span class="text-muted" style="font-weight:400">(all if none)</span></div>
+        <div class="category-grid" id="cr-categories">
+          <button class="cat-pill" data-cat="General Knowledge">General Knowledge</button>
+          <button class="cat-pill" data-cat="Science">Science</button>
+          <button class="cat-pill" data-cat="History">History</button>
+          <button class="cat-pill" data-cat="Geography">Geography</button>
+          <button class="cat-pill" data-cat="Sports">Sports</button>
+          <button class="cat-pill" data-cat="Entertainment">Entertainment</button>
+          <button class="cat-pill" data-cat="Technology">Technology</button>
+          <button class="cat-pill" data-cat="Math">Math</button>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button class="btn btn-secondary" style="flex:1" id="cr-cancel-btn">Cancel</button>
+        <button class="btn btn-primary" style="flex:1" id="cr-submit-btn">
+          <span class="btn-spinner"></span>
+          <span class="btn-label">🚀 Create Room</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── JOIN ROOM MODAL ──────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="join-room-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div><div class="modal-title">Join Room</div><div class="modal-sub">Enter a 6-character room code</div></div>
+      <button class="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="join-form">
+        <div class="form-group">
+          <label class="form-label" for="join-code"># Room Code</label>
+          <input class="input" id="join-code" type="text" placeholder="ABC123"
+            maxlength="6" autocomplete="off" autocapitalize="characters"
+            style="font-family:monospace;font-size:1.4rem;letter-spacing:.2em;text-align:center;text-transform:uppercase" />
+        </div>
+        <div class="flex gap-2">
+          <button type="button" class="btn btn-secondary" style="flex:1" id="jr-cancel-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex:1" id="jr-submit-btn">
+            <span class="btn-spinner"></span>
+            <span class="btn-label">Join 🚀</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ─── TOAST CONTAINER ──────────────────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<!-- ─── SCRIPTS ─────────────────────────────────────────────────────────── -->
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/socket.js"></script>
+
+<script>
+/* ═══ INDEX PAGE LOGIC ════════════════════════════════════════════════════ */
+window.initPage = function() {
+
+  // ── Auth tab switching ──────────────────────────────────────────────
+  document.querySelectorAll('#auth-tabs .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#auth-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      document.getElementById('tab-guest').classList.toggle('hidden', tab !== 'guest');
+      document.getElementById('tab-discord').classList.toggle('hidden', tab !== 'discord');
+    });
+  });
+
+  // ── Open auth if action requested without login ─────────────────────
+  function requireAuth(cb) {
+    if (Store.get('user')) { cb(); return; }
+    UI.openModal('auth-modal');
+    const off = Store.on('change:user', (u) => { if (u) { off(); UI.closeModal('auth-modal'); cb(); } });
+  }
+
+  // ── Header sign-in btn ──────────────────────────────────────────────
+  document.getElementById('header-signin-btn')?.addEventListener('click', () => UI.openModal('auth-modal'));
+
+  // ── Guest login form ────────────────────────────────────────────────
+  document.getElementById('guest-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('guest-submit-btn');
+    const username = document.getElementById('guest-username').value.trim();
+    if (!username) return;
+    UI.setLoading(btn, true);
+    try {
+      const { token, user } = await API.post('/api/auth/guest', { username });
+      Store.set('token', token);
+      Store.set('user', user);
+      UI.toast(`Welcome, ${user.username}! 👋`, 'success');
+      UI.closeModal('auth-modal');
+      SocketClient.connect(token);
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    } finally {
+      UI.setLoading(btn, false);
+    }
+  });
+
+  // ── Discord login ───────────────────────────────────────────────────
+  document.getElementById('discord-login-btn').addEventListener('click', () => {
+    window.location.href = API.discordLoginUrl();
+  });
+
+  // ── Create Room button ──────────────────────────────────────────────
+  document.getElementById('btn-create-room').addEventListener('click', () => {
+    requireAuth(() => UI.openModal('create-room-modal'));
+  });
+
+  // ── Join Code button ────────────────────────────────────────────────
+  document.getElementById('btn-join-code').addEventListener('click', () => {
+    requireAuth(() => UI.openModal('join-room-modal'));
+  });
+
+  document.getElementById('cr-cancel-btn').addEventListener('click', () => UI.closeModal('create-room-modal'));
+  document.getElementById('jr-cancel-btn').addEventListener('click', () => UI.closeModal('join-room-modal'));
+
+  // Force uppercase in join code
+  document.getElementById('join-code').addEventListener('input', function() {
+    this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  });
+
+  // ── Option buttons (visibility, gameType, difficulty) ─────────────
+  document.querySelectorAll('[data-group]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const group = btn.dataset.group;
+      document.querySelectorAll(`[data-group="${group}"]`).forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+  });
+
+  // ── Category pills ─────────────────────────────────────────────────
+  document.querySelectorAll('.cat-pill').forEach(pill => {
+    pill.addEventListener('click', () => pill.classList.toggle('selected'));
+  });
+
+  // ── Timer slider ───────────────────────────────────────────────────
+  const timerSlider = document.getElementById('cr-timer');
+  const timerVal    = document.getElementById('cr-timer-val');
+  timerSlider.addEventListener('input', () => { timerVal.textContent = timerSlider.value + 's'; });
+
+  // ── Create Room submit ─────────────────────────────────────────────
+  document.getElementById('cr-submit-btn').addEventListener('click', () => {
+    const btn = document.getElementById('cr-submit-btn');
+    const settings = {
+      isPublic:      document.querySelector('[data-group="visibility"].selected')?.dataset.value !== 'false',
+      gameType:      document.querySelector('[data-group="gameType"].selected')?.dataset.value   || 'ffa',
+      maxPlayers:    parseInt(document.getElementById('cr-max-players').value),
+      questionCount: parseInt(document.getElementById('cr-q-count').value),
+      timerSeconds:  parseInt(document.getElementById('cr-timer').value),
+      difficulty:    document.querySelector('[data-group="difficulty"].selected')?.dataset.value || 'mixed',
+      categories:    Array.from(document.querySelectorAll('.cat-pill.selected')).map(p => p.dataset.cat),
+    };
+
+    UI.setLoading(btn, true);
+    SocketClient.createRoom(settings, (result) => {
+      UI.setLoading(btn, false);
+      if (result.success && result.room) {
+        UI.closeModal('create-room-modal');
+        Store.set('room', result.room);
+        window.location.href = `room.html?code=${result.room.code}`;
+      } else {
+        UI.toast(result.error || 'Failed to create room', 'error');
+      }
+    });
+  });
+
+  // ── Join Room submit ───────────────────────────────────────────────
+  document.getElementById('join-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const btn  = document.getElementById('jr-submit-btn');
+    const code = document.getElementById('join-code').value.trim().toUpperCase();
+    if (code.length < 6) return UI.toast('Enter a 6-character code', 'error');
+
+    UI.setLoading(btn, true);
+    SocketClient.joinRoom(code, (result) => {
+      UI.setLoading(btn, false);
+      if (result.success && result.room) {
+        UI.closeModal('join-room-modal');
+        Store.set('room', result.room);
+        window.location.href = `room.html?code=${result.room.code}`;
+      } else {
+        UI.toast(result.error || 'Room not found', 'error');
+      }
+    });
+  });
+
+  // ── Render public rooms ────────────────────────────────────────────
+  function renderRooms(rooms) {
+    const grid  = document.getElementById('rooms-grid');
+    const count = document.getElementById('room-count');
+    count.textContent = `${rooms.length} open`;
+
+    if (rooms.length === 0) {
+      const connected = Store.get('isConnected');
+      const user      = Store.get('user');
+      grid.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">${connected ? '🎮' : '🔌'}</div>
+          <div class="empty-title">${connected ? 'No public rooms yet' : user ? 'Connecting…' : 'Sign in to see live rooms'}</div>
+          <div class="empty-desc">${connected ? 'Be the first to create one!' : ''}</div>
+          ${connected ? `<button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="document.getElementById('btn-create-room').click()">➕ Create Room</button>` : ''}
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = '';
+    rooms.forEach(room => {
+      const card = document.createElement('div');
+      card.className = 'room-card';
+      const isFull = room.playerCount >= room.maxPlayers;
+      const pips = Array.from({ length: room.maxPlayers }, (_, i) =>
+        `<div class="pip${i < room.playerCount ? ' filled' : ''}"></div>`
+      ).join('');
+      card.innerHTML = `
+        <div class="room-card-top">
+          <div>
+            <div class="room-code">${room.code}</div>
+            <div class="room-host">Host: ${room.hostUsername}</div>
+          </div>
+          <span class="badge ${room.gameType === 'versus' ? 'badge-purple' : 'badge-blue'}">
+            ${room.gameType === 'versus' ? 'Versus' : 'Free For All'}
+          </span>
+        </div>
+        <div class="room-bottom">
+          <div class="player-bar">
+            <div class="player-bar-pips">${pips}</div>
+            <span class="player-count" style="${isFull ? 'color:var(--red)' : ''}">${room.playerCount}/${room.maxPlayers}</span>
+          </div>
+          <button class="room-join-btn" ${isFull ? 'disabled' : ''} data-code="${room.code}">
+            ${isFull ? 'Full' : 'Join →'}
+          </button>
+        </div>`;
+
+      if (!isFull) {
+        card.querySelector('.room-join-btn').addEventListener('click', () => {
+          if (!Store.get('user')) { UI.openModal('auth-modal'); return; }
+          SocketClient.joinRoom(room.code, (result) => {
+            if (result.success && result.room) {
+              Store.set('room', result.room);
+              window.location.href = `room.html?code=${result.room.code}`;
+            } else {
+              UI.toast(result.error || 'Could not join', 'error');
+            }
+          });
+        });
+      }
+      grid.appendChild(card);
+    });
+  }
+
+  renderRooms(Store.get('publicRooms'));
+  Store.on('change:publicRooms', renderRooms);
+  Store.on('change:isConnected', () => {
+    if (Store.get('publicRooms').length === 0) renderRooms([]);
+  });
+};
+</script>
+<script src="js/app.js"></script>
+</body>
+</html>

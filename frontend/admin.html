@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IQuiz — Admin Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header id="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo"><div class="logo-icon">🎯</div><span class="logo-text">I<span>Quiz</span></span></a>
+    <div class="header-stats">
+      <div class="stat-pill"><div class="dot" id="stat-dot"></div><strong id="stat-online">0</strong> online</div>
+    </div>
+    <div class="header-actions">
+      <a href="index.html" class="header-btn">🏠</a>
+      <button class="header-btn" id="mute-btn">🔊</button>
+      <div id="header-user-area"></div>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="container-sm" style="padding:2rem 1rem 4rem">
+
+    <div class="lb-header mb-3">
+      <div class="lb-icon-wrap">🛡️</div>
+      <div><h2>Admin Panel</h2><p class="text-sm text-muted">Manage questions &amp; users</p></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="admin-stats-grid mb-3" id="admin-stats">
+      <div class="card admin-stat"><div class="as-val" id="as-users">—</div><div class="as-key">Users</div></div>
+      <div class="card admin-stat"><div class="as-val" id="as-questions">—</div><div class="as-key">Questions</div></div>
+      <div class="card admin-stat"><div class="as-val" id="as-rooms">—</div><div class="as-key">Active Rooms</div></div>
+      <div class="card admin-stat"><div class="as-val" id="as-games">—</div><div class="as-key">Total Games</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs mb-3" id="admin-tabs">
+      <button class="tab-btn active" data-tab="questions">📝 Questions</button>
+      <button class="tab-btn" data-tab="users">👥 Users</button>
+    </div>
+
+    <!-- Questions tab -->
+    <div id="tab-questions">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-sm text-muted" id="q-count-label">— questions</span>
+        <button class="btn btn-primary btn-sm" id="add-q-toggle">➕ Add Question</button>
+      </div>
+
+      <!-- Add question form -->
+      <div class="add-q-form" id="add-q-form">
+        <h3 class="mb-2" style="font-size:.88rem">New Question</h3>
+        <div class="form-group">
+          <label class="form-label">Question Text</label>
+          <textarea class="input" id="nq-text" rows="3" placeholder="Enter the question…"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Options <span class="text-muted" style="font-weight:400">(select correct answer)</span></label>
+          <div class="options-list" id="nq-options">
+            <div class="option-row"><input type="radio" name="nq-correct" class="correct-radio" value="0" checked /><input class="input" placeholder="Option A…" /></div>
+            <div class="option-row"><input type="radio" name="nq-correct" class="correct-radio" value="1" /><input class="input" placeholder="Option B…" /></div>
+            <div class="option-row"><input type="radio" name="nq-correct" class="correct-radio" value="2" /><input class="input" placeholder="Option C…" /></div>
+            <div class="option-row"><input type="radio" name="nq-correct" class="correct-radio" value="3" /><input class="input" placeholder="Option D…" /></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" class="mb-2">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Category</label>
+            <select class="select" id="nq-category">
+              <option>General Knowledge</option><option>Science</option><option>History</option>
+              <option>Geography</option><option>Sports</option><option>Entertainment</option>
+              <option>Technology</option><option>Math</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">Difficulty</label>
+            <select class="select" id="nq-difficulty">
+              <option value="easy">Easy</option>
+              <option value="medium" selected>Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-secondary" style="flex:1" id="add-q-cancel">Cancel</button>
+          <button class="btn btn-primary" style="flex:1" id="add-q-submit">
+            <span class="btn-spinner"></span><span class="btn-label">💾 Save Question</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Questions list -->
+      <div id="questions-list">
+        <div style="padding:2rem;text-align:center"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- Users tab -->
+    <div id="tab-users" class="hidden">
+      <div class="mb-2">
+        <input class="input" id="user-search" placeholder="🔍 Search users…" />
+      </div>
+      <div id="users-list">
+        <div style="padding:2rem;text-align:center"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div id="toast-container"></div>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/socket.js"></script>
+<script>
+window.initPage = async function() {
+  const token = Store.get('token');
+  const user  = Store.get('user');
+  if (!user?.isAdmin) { UI.toast('Admin access required', 'error'); window.location.href = 'index.html'; return; }
+
+  let allQuestions = [];
+  let allUsers = [];
+
+  // ── Load stats ─────────────────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const s = await API.get('/api/admin/stats', token);
+      document.getElementById('as-users').textContent     = UI.formatNum(s.users);
+      document.getElementById('as-questions').textContent = UI.formatNum(s.questions);
+      document.getElementById('as-rooms').textContent     = UI.formatNum(s.activeRooms);
+      document.getElementById('as-games').textContent     = UI.formatNum(s.totalGames);
+    } catch {}
+  }
+
+  // ── Load questions ─────────────────────────────────────────────────
+  async function loadQuestions() {
+    try {
+      const { questions } = await API.get('/api/admin/questions?page=1', token);
+      allQuestions = questions;
+      renderQuestions(questions);
+    } catch (err) {
+      document.getElementById('questions-list').innerHTML =
+        `<p class="text-muted" style="text-align:center;padding:2rem">${err.message}</p>`;
+    }
+  }
+
+  function renderQuestions(questions) {
+    document.getElementById('q-count-label').textContent = `${questions.length} questions`;
+    const list = document.getElementById('questions-list');
+    if (!questions.length) {
+      list.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-3)">No questions found</div>';
+      return;
+    }
+    list.innerHTML = '';
+    questions.forEach(q => {
+      const div = document.createElement('div');
+      div.className = 'q-item mb-1';
+      div.dataset.id = q._id;
+      div.innerHTML = `
+        <div style="flex:1;min-width:0">
+          <div class="q-text">${q.question}</div>
+          <div class="q-meta">
+            <span>${q.category}</span>
+            <span style="color:${UI.diffColor(q.difficulty)}">${q.difficulty}</span>
+            <span style="color:var(--primary)">✓ ${q.options[q.correctIndex]}</span>
+          </div>
+        </div>
+        <button class="q-delete-btn" data-id="${q._id}" title="Remove">🗑</button>`;
+      list.appendChild(div);
+    });
+
+    list.querySelectorAll('.q-delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Remove this question?')) return;
+        try {
+          await API.delete(`/api/admin/questions/${btn.dataset.id}`, token);
+          allQuestions = allQuestions.filter(q => q._id !== btn.dataset.id);
+          renderQuestions(allQuestions);
+          UI.toast('Question removed', 'success');
+        } catch (err) {
+          UI.toast(err.message, 'error');
+        }
+      });
+    });
+  }
+
+  // ── Add question form ──────────────────────────────────────────────
+  document.getElementById('add-q-toggle').addEventListener('click', () => {
+    const form = document.getElementById('add-q-form');
+    form.classList.toggle('visible');
+  });
+  document.getElementById('add-q-cancel').addEventListener('click', () => {
+    document.getElementById('add-q-form').classList.remove('visible');
+  });
+
+  document.getElementById('add-q-submit').addEventListener('click', async () => {
+    const btn  = document.getElementById('add-q-submit');
+    const text = document.getElementById('nq-text').value.trim();
+    const opts = Array.from(document.querySelectorAll('#nq-options .option-row input[type="text"]')).map(i => i.value.trim());
+    const correct = parseInt(document.querySelector('#nq-options input[name="nq-correct"]:checked')?.value ?? '0');
+    const cat  = document.getElementById('nq-category').value;
+    const diff = document.getElementById('nq-difficulty').value;
+
+    if (!text || opts.some(o => !o)) { UI.toast('Fill all fields', 'error'); return; }
+
+    UI.setLoading(btn, true);
+    try {
+      const { question } = await API.post('/api/admin/questions', {
+        question: text, options: opts, correctIndex: correct, category: cat, difficulty: diff
+      }, token);
+      allQuestions.unshift(question);
+      renderQuestions(allQuestions);
+      document.getElementById('add-q-form').classList.remove('visible');
+      // Reset form
+      document.getElementById('nq-text').value = '';
+      document.querySelectorAll('#nq-options .option-row input[type="text"]').forEach(i => i.value = '');
+      document.querySelector('#nq-options input[value="0"]').checked = true;
+      UI.toast('Question added!', 'success');
+    } catch (err) {
+      UI.toast(err.message, 'error');
+    } finally {
+      UI.setLoading(btn, false);
+    }
+  });
+
+  // ── Load users ─────────────────────────────────────────────────────
+  async function loadUsers(search = '') {
+    try {
+      const path = `/api/admin/users?page=1${search ? '&search=' + encodeURIComponent(search) : ''}`;
+      const { users } = await API.get(path, token);
+      allUsers = users;
+      renderUsers(users);
+    } catch (err) {
+      document.getElementById('users-list').innerHTML =
+        `<p class="text-muted" style="text-align:center;padding:2rem">${err.message}</p>`;
+    }
+  }
+
+  function renderUsers(users) {
+    const list = document.getElementById('users-list');
+    if (!users.length) {
+      list.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-3)">No users found</div>';
+      return;
+    }
+    list.innerHTML = '';
+    users.forEach(u => {
+      const div = document.createElement('div');
+      div.className = 'q-item mb-1';
+      div.innerHTML = `
+        <img style="width:32px;height:32px;border-radius:7px;object-fit:cover;background:var(--surface-3);flex-shrink:0"
+          src="${UI.avatar(u)}" alt="${u.username}" />
+        <div style="flex:1;min-width:0">
+          <div class="q-text">${u.username} ${u.isAdmin ? '<span style="color:var(--primary);font-size:.72rem">admin</span>' : ''}</div>
+          <div class="q-meta">
+            <span>${u.authType}</span>
+            <span>${u.stats?.gamesPlayed || 0} games</span>
+            ${u.isBanned ? '<span style="color:var(--red)">BANNED</span>' : ''}
+          </div>
+        </div>
+        <button class="btn btn-sm ${u.isBanned ? 'btn-primary' : 'btn-danger'}" data-id="${u._id}" data-banned="${u.isBanned}">
+          ${u.isBanned ? 'Unban' : 'Ban'}
+        </button>`;
+      list.appendChild(div);
+    });
+
+    list.querySelectorAll('[data-id]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const isBanned = btn.dataset.banned === 'true';
+        try {
+          await API.put(`/api/admin/users/${btn.dataset.id}/ban`, { banned: !isBanned }, token);
+          UI.toast(isBanned ? 'User unbanned' : 'User banned', 'success');
+          loadUsers(document.getElementById('user-search').value);
+        } catch (err) {
+          UI.toast(err.message, 'error');
+        }
+      });
+    });
+  }
+
+  // ── Tabs ───────────────────────────────────────────────────────────
+  document.querySelectorAll('#admin-tabs .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#admin-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      document.getElementById('tab-questions').classList.toggle('hidden', tab !== 'questions');
+      document.getElementById('tab-users').classList.toggle('hidden',    tab !== 'users');
+      if (tab === 'users' && !allUsers.length) loadUsers();
+    });
+  });
+
+  // User search
+  let userSearchTimer;
+  document.getElementById('user-search').addEventListener('input', (e) => {
+    clearTimeout(userSearchTimer);
+    userSearchTimer = setTimeout(() => loadUsers(e.target.value), 400);
+  });
+
+  // ── Init ───────────────────────────────────────────────────────────
+  loadStats();
+  loadQuestions();
+};
+</script>
+<script src="js/app.js"></script>
+</body>
+</html>

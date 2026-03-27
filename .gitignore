@@ -1,0 +1,19 @@
+# Environment variables (contains secrets — never commit these)
+backend/.env
+.env
+
+# Node modules
+node_modules/
+backend/node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+
+# Claude Code settings
+.claude/

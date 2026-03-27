@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IQuiz — Leaderboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<header id="header">
+  <div class="header-inner">
+    <a href="index.html" class="logo"><div class="logo-icon">🎯</div><span class="logo-text">I<span>Quiz</span></span></a>
+    <div class="header-stats">
+      <div class="stat-pill"><div class="dot" id="stat-dot"></div><strong id="stat-online">0</strong> online</div>
+      <div class="stat-pill">🎮 <strong id="stat-playing">0</strong> playing</div>
+      <div class="stat-pill">⏳ <strong id="stat-waiting">0</strong> waiting</div>
+    </div>
+    <div class="header-actions">
+      <a href="index.html" class="header-btn" title="Home">🏠</a>
+      <button class="header-btn" id="mute-btn">🔊</button>
+      <button class="btn btn-primary btn-sm hidden" id="header-signin-btn">Sign In</button>
+      <div id="header-user-area"></div>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="container-sm" style="padding:2rem 1rem 4rem">
+
+    <div class="lb-header">
+      <div class="lb-icon-wrap">🏆</div>
+      <div>
+        <h2>Leaderboard</h2>
+        <p class="text-sm text-muted">Top players worldwide</p>
+      </div>
+    </div>
+
+    <div class="lb-controls">
+      <input type="text" class="input lb-search" id="lb-search" placeholder="🔍  Search players…" />
+      <div class="sort-pills">
+        <button class="sort-pill active" data-sort="totalScore">Score</button>
+        <button class="sort-pill" data-sort="gamesWon">Wins</button>
+        <button class="sort-pill" data-sort="accuracy">Accuracy</button>
+        <button class="sort-pill" data-sort="gamesPlayed">Games</button>
+      </div>
+    </div>
+
+    <div class="card" id="lb-card">
+      <div style="padding:3rem;text-align:center">
+        <div class="spinner"></div>
+        <p class="text-muted text-sm" style="margin-top:1rem">Loading rankings…</p>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div id="toast-container"></div>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/store.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/socket.js"></script>
+<script>
+window.initPage = function() {
+  let allPlayers = [];
+  let currentSort = 'totalScore';
+  const user = Store.get('user');
+
+  async function loadLeaderboard(sort) {
+    try {
+      const { players } = await API.get(`/api/leaderboard?sort=${sort}&limit=100`);
+      allPlayers = players;
+      renderTable(players);
+    } catch (err) {
+      document.getElementById('lb-card').innerHTML =
+        `<div style="padding:3rem;text-align:center;color:var(--text-3)">Failed to load: ${err.message}</div>`;
+    }
+  }
+
+  function renderTable(players) {
+    if (!players.length) {
+      document.getElementById('lb-card').innerHTML =
+        '<div style="padding:2rem;text-align:center;color:var(--text-3)">No players found</div>';
+      return;
+    }
+
+    const tbody = players.map((p, i) => {
+      const isMe = p._id === user?.id;
+      const acc  = p.accuracy || 0;
+      return `
+        <tr class="${isMe ? 'me' : ''}">
+          <td><span class="lb-rank">${p.rank <= 3 ? ['🥇','🥈','🥉'][p.rank-1] : p.rank}</span></td>
+          <td>
+            <div class="lb-player-cell">
+              <img class="lb-avatar" src="${UI.avatar({ avatar: p.avatar, username: p.username })}" alt="${p.username}" />
+              <span class="lb-name">${p.username}${isMe ? ' <span style="color:var(--primary);font-size:.72rem">(you)</span>' : ''}</span>
+            </div>
+          </td>
+          <td><span class="lb-score">${UI.formatNum(p.stats.totalScore)}</span></td>
+          <td class="hidden-mobile">${p.stats.gamesWon}</td>
+          <td class="hidden-tablet"><span class="${UI.accClass(acc)}">${acc}%</span></td>
+          <td class="hidden-tablet">${p.stats.gamesPlayed}</td>
+          <td class="hidden-tablet">${p.stats.bestWinStreak > 0 ? '↑' + p.stats.bestWinStreak : '—'}</td>
+        </tr>`;
+    }).join('');
+
+    document.getElementById('lb-card').innerHTML = `
+      <div class="lb-table-wrap">
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th style="width:40px">#</th>
+              <th>Player</th>
+              <th style="text-align:right">Score</th>
+              <th style="text-align:right" class="hidden-mobile">Wins</th>
+              <th style="text-align:right" class="hidden-tablet">Accuracy</th>
+              <th style="text-align:right" class="hidden-tablet">Games</th>
+              <th style="text-align:right" class="hidden-tablet">Best Streak</th>
+            </tr>
+          </thead>
+          <tbody>${tbody}</tbody>
+        </table>
+      </div>`;
+
+    // Add style for hidden cols
+    const style = document.createElement('style');
+    style.textContent = `
+      @media (max-width:640px) { .hidden-mobile { display:none; } }
+      @media (max-width:768px) { .hidden-tablet { display:none; } }
+    `;
+    if (!document.head.querySelector('[data-lb-style]')) {
+      style.dataset.lbStyle = '1';
+      document.head.appendChild(style);
+    }
+  }
+
+  // Sort pills
+  document.querySelectorAll('.sort-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.sort-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      currentSort = pill.dataset.sort;
+      loadLeaderboard(currentSort);
+    });
+  });
+
+  // Search
+  let searchDebounce;
+  document.getElementById('lb-search').addEventListener('input', (e) => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      const q = e.target.value.toLowerCase();
+      const filtered = q ? allPlayers.filter(p => p.username.toLowerCase().includes(q)) : allPlayers;
+      renderTable(filtered);
+    }, 300);
+  });
+
+  loadLeaderboard(currentSort);
+};
+</script>
+<script src="js/app.js"></script>
+</body>
+</html>
