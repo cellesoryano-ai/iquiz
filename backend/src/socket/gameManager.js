@@ -224,10 +224,15 @@ class GameManager {
     const connectedPlayers = room.players.filter(p => p.isConnected);
 
     if (connectedPlayers.length === 0) {
-      // Empty room, clean up
-      this._clearTimer(code);
-      this.activeRooms.delete(code);
-      await Room.findOneAndUpdate({ code }, { status: 'finished' });
+      // Delay deletion to allow for page navigation reconnects
+      setTimeout(() => {
+        const r = this.activeRooms.get(code);
+        if (r && r.players.filter(p => p.isConnected).length === 0) {
+          this._clearTimer(code);
+          this.activeRooms.delete(code);
+          Room.findOneAndUpdate({ code }, { status: 'finished' }).catch(() => {});
+        }
+      }, 8000);
       return;
     }
 
