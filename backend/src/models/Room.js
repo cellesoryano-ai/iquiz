@@ -59,6 +59,5 @@ const roomSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 roomSchema.index({ status: 1, 'settings.isPublic': 1 });
-roomSchema.index({ code: 1 });
 
 module.exports = mongoose.model('Room', roomSchema);
