@@ -249,15 +249,17 @@ class GameManager {
     const connectedPlayers = room.players.filter(p => p.isConnected);
 
     if (connectedPlayers.length === 0) {
-      // Delay deletion to allow for page navigation reconnects
+      // Wait 30s before deleting — gives time for page navigation reconnects
+      // and handles slower connections on free hosting tiers
       setTimeout(() => {
         const r = this.activeRooms.get(code);
         if (r && r.players.filter(p => p.isConnected).length === 0) {
           this._clearTimer(code);
           this.activeRooms.delete(code);
+          if (this.io) this.io.to('lobby').emit('lobby_rooms', this.getPublicRooms());
           Room.findOneAndUpdate({ code }, { status: 'finished' }).catch(() => {});
         }
-      }, 8000);
+      }, 30000);
       return;
     }
 

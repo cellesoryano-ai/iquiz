@@ -1,4 +1,10 @@
 /* ─── IQuiz App — Shared Initialization ────────────────────────────────── */
+
+// Keep the backend awake on Render free tier (pings every 8 minutes)
+setInterval(() => {
+  fetch(CONFIG.API_URL + '/health').catch(() => {});
+}, 8 * 60 * 1000);
+
 document.addEventListener('DOMContentLoaded', () => {
 
   /* ── Handle OAuth redirect token ──────────────────────────────────── */
