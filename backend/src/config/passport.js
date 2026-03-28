@@ -1,5 +1,5 @@
 const passport = require('passport');
-const DiscordStrategy = require('passport-discord').Strategy;
+const DiscordStrategy = require('passport-discord-auth').Strategy;
 const User = require('../models/User');
 
 passport.serializeUser((user, done) => {
@@ -19,9 +19,9 @@ if (!process.env.DISCORD_CLIENT_ID || process.env.DISCORD_CLIENT_ID === 'your-di
   console.log('⚠️  Discord OAuth not configured — guest login only');
 } else {
   passport.use(new DiscordStrategy({
-    clientID: process.env.DISCORD_CLIENT_ID,
+    clientId: process.env.DISCORD_CLIENT_ID,
     clientSecret: process.env.DISCORD_CLIENT_SECRET,
-    callbackURL: process.env.DISCORD_CALLBACK_URL,
+    callbackUrl: process.env.DISCORD_CALLBACK_URL,
     scope: ['identify', 'email'],
   }, async (accessToken, refreshToken, profile, done) => {
   try {
