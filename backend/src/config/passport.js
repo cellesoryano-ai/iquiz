@@ -21,7 +21,7 @@ if (!process.env.DISCORD_CLIENT_ID || process.env.DISCORD_CLIENT_ID === 'your-di
   passport.use(new DiscordStrategy({
     clientId: process.env.DISCORD_CLIENT_ID,
     clientSecret: process.env.DISCORD_CLIENT_SECRET,
-    callbackURL: process.env.DISCORD_CALLBACK_URL,
+    callbackUrl: process.env.DISCORD_CALLBACK_URL,
     scope: ['identify', 'email'],
   }, async (accessToken, refreshToken, profile, done) => {
   try {
