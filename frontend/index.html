@@ -15,8 +15,7 @@
 <header id="header">
   <div class="header-inner">
     <a href="index.html" class="logo">
-      <div class="logo-icon">🎯</div>
-      <span class="logo-text">I<span>Quiz</span></span>
+      <img src="image/logo.png" alt="IQuiz" class="logo-img" />
     </a>
 
     <div class="header-stats">
@@ -295,6 +294,19 @@
 <script>
 /* ═══ INDEX PAGE LOGIC ════════════════════════════════════════════════════ */
 window.initPage = function() {
+
+  // ── Pending redirect (e.g. from invite link) ───────────────────────
+  function checkPendingRedirect() {
+    const redirect = sessionStorage.getItem('iquiz_redirect');
+    if (redirect && Store.get('user')) {
+      sessionStorage.removeItem('iquiz_redirect');
+      window.location.href = redirect;
+    }
+  }
+  // Handle Discord OAuth redirect and any login that sets the user
+  Store.on('change:user', (u) => { if (u) checkPendingRedirect(); });
+  // Check immediately in case Discord OAuth already set the user
+  checkPendingRedirect();
 
   // ── Auth tab switching ──────────────────────────────────────────────
   document.querySelectorAll('#auth-tabs .tab-btn').forEach(btn => {

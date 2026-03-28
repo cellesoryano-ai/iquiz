@@ -14,8 +14,7 @@
 <header id="header">
   <div class="header-inner">
     <a href="index.html" class="logo">
-      <div class="logo-icon">🎯</div>
-      <span class="logo-text">I<span>Quiz</span></span>
+      <img src="image/logo.png" alt="IQuiz" class="logo-img" />
     </a>
     <div class="header-stats">
       <div class="stat-pill"><div class="dot" id="stat-dot"></div><strong id="stat-online">0</strong> online</div>
@@ -58,7 +57,8 @@
 
           <div class="invite-row">
             <div class="invite-url" id="w-invite-url">—</div>
-            <button class="btn btn-secondary btn-sm" id="copy-invite-btn">📋 Copy</button>
+            <button class="btn btn-secondary btn-sm" id="copy-code-btn" title="Copy room code">🔑 Code</button>
+            <button class="btn btn-secondary btn-sm" id="copy-invite-btn" title="Copy invite link">📋 Link</button>
           </div>
 
           <!-- Host controls -->
@@ -210,7 +210,8 @@ window.initPage = function() {
   // ── Redirect if not logged in ──────────────────────────────────────
   function guardAuth() {
     if (!Store.get('user') || !Store.get('token')) {
-      UI.toast('Please sign in first', 'error');
+      sessionStorage.setItem('iquiz_redirect', window.location.href);
+      UI.toast('Please sign in to join the room', 'info');
       window.location.href = 'index.html';
       return false;
     }
@@ -328,13 +329,23 @@ window.initPage = function() {
     }
   }
 
+  // Copy room code
+  document.getElementById('copy-code-btn').addEventListener('click', () => {
+    const code = document.getElementById('w-room-code').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      UI.toast(`Room code copied: ${code}`, 'success');
+      document.getElementById('copy-code-btn').textContent = '✓ Copied';
+      setTimeout(() => { document.getElementById('copy-code-btn').textContent = '🔑 Code'; }, 2000);
+    }).catch(() => UI.toast('Copy failed', 'error'));
+  });
+
   // Copy invite link
   document.getElementById('copy-invite-btn').addEventListener('click', () => {
     const url = document.getElementById('w-invite-url').textContent;
     navigator.clipboard.writeText(url).then(() => {
       UI.toast('Invite link copied!', 'success');
       document.getElementById('copy-invite-btn').textContent = '✓ Copied';
-      setTimeout(() => { document.getElementById('copy-invite-btn').textContent = '📋 Copy'; }, 2000);
+      setTimeout(() => { document.getElementById('copy-invite-btn').textContent = '📋 Link'; }, 2000);
     }).catch(() => UI.toast('Copy failed', 'error'));
   });
 

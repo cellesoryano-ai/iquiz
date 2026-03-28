@@ -97,6 +97,10 @@ p  { line-height: 1.6; }
   font-size: 1.2rem; font-weight: 900; color: var(--text);
 }
 .logo-text span { color: var(--primary); }
+.logo-img {
+  height: 38px; width: auto; display: block;
+  object-fit: contain;
+}
 
 .header-stats {
   display: flex; align-items: center; gap: 8px; flex: 1;
