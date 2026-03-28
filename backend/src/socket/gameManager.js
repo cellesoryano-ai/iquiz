@@ -149,18 +149,26 @@ class GameManager {
     const room = this.activeRooms.get(upperCode);
 
     if (!room) throw new Error('Room not found');
-    if (room.status !== 'waiting') throw new Error('Game already in progress');
+
+    // Check if this user is already a member of the room
+    const existing = room.players.find(p => p.userId === user._id.toString());
+
+    // Only block NEW players from joining a game in progress
+    if (room.status !== 'waiting' && !existing) throw new Error('Game already in progress');
 
     const activePlayers = room.players.filter(p => p.isConnected);
-    if (activePlayers.length >= room.settings.maxPlayers) throw new Error('Room is full');
+    if (activePlayers.length >= room.settings.maxPlayers && !existing) throw new Error('Room is full');
 
-    // Anti-cheat: check if user already in this room
-    const existing = room.players.find(p => p.userId === user._id.toString());
     if (existing) {
-      if (existing.isConnected) throw new Error('Already in this room');
-      // Reconnect
+      // Always update socketId — handles page navigation and tab reconnects
+      const oldSocketId = existing.socketId;
       existing.socketId = socket.id;
       existing.isConnected = true;
+
+      // Remove old socket mapping if it was stale
+      if (oldSocketId && oldSocketId !== socket.id) {
+        this.socketRoomMap.delete(oldSocketId);
+      }
     } else {
       room.players.push({
         userId: user._id.toString(),
@@ -189,11 +197,28 @@ class GameManager {
 
     const state = this.getRoomState(upperCode);
     this.io.to(upperCode).emit('room_update', state);
-    this.io.to(upperCode).emit('player_joined', {
-      username: user.username,
-      avatar: user.avatar,
-      userId: user._id.toString(),
-    });
+
+    // Only announce join for new players, not reconnects
+    if (!existing) {
+      this.io.to(upperCode).emit('player_joined', {
+        username: user.username,
+        avatar: user.avatar,
+        userId: user._id.toString(),
+      });
+    }
+
+    // If game is active, resend current question to the reconnecting socket
+    if (existing && room.status === 'question' && room.currentQuestion) {
+      socket.emit('question', {
+        index: room.currentQuestionIndex,
+        total: room.questions.length,
+        question: room.currentQuestion.question,
+        options: room.currentQuestion.options,
+        category: room.currentQuestion.category,
+        difficulty: room.currentQuestion.difficulty,
+        endsAt: room.questionEndsAt,
+      });
+    }
 
     return state;
   }
