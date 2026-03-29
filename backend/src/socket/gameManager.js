@@ -343,17 +343,19 @@ class GameManager {
     const count = room.settings.questionCount;
     const questions = await Question.aggregate([
       { $match: questionFilter },
-      { $sample: { size: count } },
+      { $sample: { size: count * 2 } },
     ]);
 
-    if (questions.length < count) {
+    const deduped = [...new Map(questions.map(q => [q._id.toString(), q])).values()].slice(0, count);
+
+    if (deduped.length < count) {
       const fallback = await Question.aggregate([
         { $match: { isActive: true } },
-        { $sample: { size: count } },
+        { $sample: { size: count * 2 } },
       ]);
-      room.questions = fallback;
+      room.questions = [...new Map(fallback.map(q => [q._id.toString(), q])).values()].slice(0, count);
     } else {
-      room.questions = questions;
+      room.questions = deduped;
     }
 
     room.status = 'starting';
